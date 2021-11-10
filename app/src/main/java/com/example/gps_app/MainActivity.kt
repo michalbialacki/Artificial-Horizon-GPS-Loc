@@ -15,10 +15,12 @@ import android.os.Bundle
 import android.os.Looper
 import android.util.Log
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.gms.location.*
+
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -26,7 +28,11 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import java.lang.Math.cos
+import java.lang.Math.sin
 import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.math.sign
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventListener{
     private lateinit var mMap: GoogleMap
@@ -36,68 +42,96 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventListene
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationrequest: LocationRequest
-    private lateinit var sensorManager : SensorManager
+    private lateinit var sensorManagerGyro : SensorManager
+    private lateinit var sensorManagerAccelerometer : SensorManager
     private lateinit var horizonBackground : ImageView
-    private lateinit var yawIndicator : ImageView
+    private lateinit var rollIndicator : ImageView
+    private lateinit var xAcclValue : TextView
+    private lateinit var yAcclValue : TextView
+    private lateinit var zAcclValue : TextView
+
     private lateinit var locViewModel : LocationViewModel
+    var gyroVals = mutableListOf<Double>(.0,.0,.0)
+    var acclVals = mutableListOf<Double>(.0,.0,.0)
 
 
-    private fun setUpSensor() {
-        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-        sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.also {
-            sensorManager.registerListener(this,
+    private fun setupSensors() {
+        sensorManagerGyro = getSystemService(SENSOR_SERVICE) as SensorManager
+        sensorManagerAccelerometer = getSystemService(SENSOR_SERVICE) as SensorManager
+        sensorManagerGyro.getDefaultSensor(Sensor.TYPE_GYROSCOPE)?.also {
+            sensorManagerGyro.registerListener(this,
                 it,
                 SensorManager.SENSOR_DELAY_FASTEST,
                 SensorManager.SENSOR_DELAY_FASTEST)
 
         }
+        sensorManagerAccelerometer.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.also {
+            sensorManagerAccelerometer.registerListener(this,it,
+            SensorManager.SENSOR_DELAY_FASTEST,
+            SensorManager.SENSOR_DELAY_FASTEST)
+        }
+
     }
 
 
     override fun onSensorChanged(event: SensorEvent?) {
-        if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER){
-            var yaw = event?.values[0]
-            var pitch = (event?.values[1]-9.81f)
-            var thirdAccelerometerValue = (event.values[2])
 
-            horizonBackground.apply {
+        if(event?.sensor?.type == Sensor.TYPE_GYROSCOPE){
+            /*
+                0 -> pitch
+                1 -> roll
+                2 -> yaw
+             */
+            var gyroPitch = Math.round(event.values[0]*10.0) / 10.0
+            var gyroRoll = Math.round(event.values[1]*10.0) / 10.0
+            var gyroYaw = Math.round(event.values[2]*10.0) / 10.0
 
-//                if (pitch>0f && thirdAccelerometerValue >0f ){
-//                    rotationX = (pitch)
-//                    //rotationY = (yaw)
-//                    //rotation = (-yaw)
-//                    //translationX = (yaw * -10)
-//                    translationY = ((pitch) * -12f)
-//                    Log.e(TAG, "onSensorChanged: ${pitch}", )
-//                }
-                if ((thirdAccelerometerValue >=0f) ){
-                    rotationX = (pitch)
-                    //rotationY = (yaw)
-                    //rotation = (-yaw)
-                    //translationX = (yaw * -10)
-                    translationY = 9.81f-((-pitch) * 12f)
-                    Log.e(TAG, "onSensorChanged: ${thirdAccelerometerValue}", )
-                }
-                else{
-                    rotationX = (pitch)
-                    //rotationY = (yaw)
-                    //rotation = (-yaw)
-                    //translationX = (yaw * -10)
-                    translationY = ((-pitch) * 40f)
-                    Log.e(TAG, "onSensorChanged: ${thirdAccelerometerValue}", )
-                }
+            gyroVals[0]="%.1f".format(gyroPitch).toDouble()
+            gyroVals[1]="%.1f".format(gyroRoll).toDouble()
+            gyroVals[2]="%.1f".format(gyroYaw).toDouble()
 
+//            indicatorPos = (indicatorPos + (gyroRoll)*0.1f)
+//            backgroundPos = (backgroundPos + (gyroPitch)*0.08f)
+            gyroVals
 
-            }
-
-            yawIndicator.apply {
-                rotationY = (yaw)
-                rotation = (-yaw)
-                translationX = (yaw * -15)
-
-            }
 
         }
+
+            if(event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
+                /*
+                    0->yaw
+                    1->pitch
+                    2->roll
+
+                 */
+
+
+                var accelPitch = (Math.round(event.values[1] * 10.0) / 10.0)
+                var accelRoll = (Math.round(event.values[0]*10.0) / 10.0)
+                var accelYaw = (Math.round(event.values[2]*10.0) / 10.0)
+                acclVals[0] = accelPitch
+                acclVals[1] = accelRoll
+                acclVals[2] = accelYaw
+
+                yAcclValue.text = "${accelPitch}"
+                xAcclValue.text = "${accelYaw}"
+                zAcclValue.text = "${accelRoll}"
+                acclVals
+
+
+    }
+        rollIndicator.apply {
+            rotation = (-acclVals[1] - (-acclVals[1] * sin(gyroVals[1]))).toFloat() *7.5f
+            translationX = acclVals[1].toFloat()
+        }
+        horizonBackground.apply {
+            rotationX = (acclVals[2]).toFloat()
+            translationY = -(acclVals[2]).toFloat()*20f
+        }
+
+        gyroVals
+        acclVals
+
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
@@ -105,7 +139,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventListene
     }
 
     override fun onDestroy() {
-        sensorManager.unregisterListener(this)
+        sensorManagerGyro.unregisterListener(this)
         super.onDestroy()
     }
 
@@ -123,15 +157,23 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventListene
         mapFragment.getMapAsync(this)
 
 
-
+        xAcclValue = findViewById(R.id.tv_xAcclValue)
+        yAcclValue = findViewById(R.id.tv_yAcclValue)
+        zAcclValue = findViewById(R.id.tv_zAcclValue)
         horizonBackground=findViewById(R.id.img_backg)
-        yawIndicator = findViewById(R.id.img_yawIndicator)
+        rollIndicator = findViewById(R.id.img_yawIndicator)
         // Get the SupportMapFragment and request notification when the map is ready to be used.
 
 
 
-        setUpSensor()
+
+        setupSensors()
+
+//        indicatorPos
+//        backgroundPos
     }
+
+
 
     /**
      * Manipulates the map once available.
@@ -144,12 +186,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventListene
      */
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-        var latitude : Double = 0.0
-        var longtitude : Double = 0.0
         locViewModel = ViewModelProvider(this).get(LocationViewModel::class.java)
         localizationDeclaration()
         updateCurrentLoc()
-        //getUserLocation()
         fusedLocationProviderClient.removeLocationUpdates(locationCallback)
         locViewModel.getLocationData().observe(this, {
             mMap.clear()
@@ -158,8 +197,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventListene
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(airVehiclePosition,10f))
 
         })
-
-        // Add a marker in Sydney and move the camera
 
     }
 
@@ -228,13 +265,5 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventListene
         )
 
 
-    }
-
-    private fun getAddress (Lat : Double, Long: Double) : String {
-        var cityName = ""
-        var geocoder = Geocoder(applicationContext, Locale.getDefault())
-        var address : MutableList<Address> = geocoder.getFromLocation(Lat,Long,1)
-        cityName = address.get(0).getAddressLine(0)
-        return cityName
     }
 }

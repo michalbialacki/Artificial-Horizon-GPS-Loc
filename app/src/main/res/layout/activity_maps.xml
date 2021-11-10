@@ -5,9 +5,9 @@
     android:id="@+id/frameLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ArtiHorizon">
+    tools:context=".MainActivity">
 
-    <fragment
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="414dp"
@@ -32,14 +32,15 @@
         <ImageView
             android:id="@+id/img_backg"
             android:layout_width="match_parent"
-            android:layout_height="500dp"
+            android:layout_height="600dp"
             android:adjustViewBounds="false"
             android:scaleType="fitXY"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/arti_bckg_removebg_preview" />
+            app:srcCompat="@drawable/arti_bckg_removebg_preview"
+            android:contentDescription="background image for artiHori" />
 
         <ImageView
             android:id="@+id/img_yawIndicator"
@@ -49,7 +50,8 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/yaw_indicator_removebg_preview" />
+            app:srcCompat="@drawable/yaw_indicator_removebg_preview"
+            android:contentDescription="image for YawIndi" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/lt_figure"
@@ -59,6 +61,68 @@
             tools:layout_editor_absoluteX="-3dp"
             tools:layout_editor_absoluteY="-6dp">
 
+            <TextView
+                android:id="@+id/tv_accelerometerName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="177dp"
+                android:layout_marginEnd="177dp"
+                android:layout_marginBottom="47dp"
+                android:text="@string/accelerometer"
+                android:textAlignment="center"
+                android:textColor="@color/teal_200"
+                android:textSize="18sp"
+                android:textStyle="bold|italic"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <TextView
+                android:id="@+id/tv_xAcclValue"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="32dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/textview_background"
+                android:textAlignment="center"
+                android:textSize="18sp"
+                android:textStyle="bold|italic"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/tv_yAcclValue"
+                app:layout_constraintStart_toStartOf="parent"
+                tools:text="XAcclVal" />
+
+            <TextView
+                android:id="@+id/tv_yAcclValue"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="32dp"
+                android:layout_marginEnd="32dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/textview_background"
+                android:textAlignment="center"
+                android:textSize="18sp"
+                android:textStyle="bold|italic"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/tv_zAcclValue"
+                app:layout_constraintHorizontal_bias="0.529"
+                app:layout_constraintStart_toEndOf="@+id/tv_xAcclValue"
+                tools:text="YAcclVal" />
+
+            <TextView
+                android:id="@+id/tv_zAcclValue"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="32dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/textview_background"
+                android:textAlignment="center"
+                android:textSize="18sp"
+                android:textStyle="bold|italic"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/tv_yAcclValue"
+                tools:text="ZAcclVal" />
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
