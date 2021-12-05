@@ -65,17 +65,19 @@
                 android:id="@+id/tv_accelerometerName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="177dp"
-                android:layout_marginEnd="177dp"
-                android:layout_marginBottom="47dp"
-                android:text="@string/accelerometer"
+                android:layout_marginStart="100dp"
+                android:layout_marginTop="298dp"
+                android:layout_marginEnd="56dp"
+                android:layout_marginBottom="8dp"
+                android:text="Yaw"
                 android:textAlignment="center"
                 android:textColor="@color/teal_200"
                 android:textSize="18sp"
                 android:textStyle="bold|italic"
-                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintBottom_toTopOf="@+id/tv_zAcclValue"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent" />
+                app:layout_constraintStart_toEndOf="@+id/tv_rollIndicator"
+                app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
                 android:id="@+id/tv_xAcclValue"
@@ -123,6 +125,42 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@+id/tv_yAcclValue"
                 tools:text="ZAcclVal" />
+
+            <TextView
+                android:id="@+id/tv_rollIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="110dp"
+                android:layout_marginTop="298dp"
+                android:layout_marginEnd="188dp"
+                android:layout_marginBottom="8dp"
+                android:text="Roll"
+                android:textAlignment="center"
+                android:textColor="@color/teal_200"
+                android:textSize="18sp"
+                android:textStyle="bold|italic"
+                app:layout_constraintBottom_toTopOf="@+id/tv_yAcclValue"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/tv_pitchIndicator"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tv_pitchIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="53dp"
+                android:layout_marginTop="298dp"
+                android:layout_marginEnd="328dp"
+                android:layout_marginBottom="8dp"
+                android:text="Pitch"
+                android:textAlignment="center"
+                android:textColor="@color/teal_200"
+                android:textSize="18sp"
+                android:textStyle="bold|italic"
+                app:layout_constraintBottom_toTopOf="@+id/tv_xAcclValue"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -1,19 +1,15 @@
 package com.example.gps_app
 
 import android.annotation.SuppressLint
-import android.content.ContentValues.TAG
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.location.Address
-import android.location.Geocoder
 import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Looper
-import android.util.Log
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -28,35 +24,29 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import java.lang.Math.cos
-import java.lang.Math.sin
-import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.math.sign
+import java.lang.Math.*
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventListener{
     private lateinit var mMap: GoogleMap
-    private val NS2S = 1.0f / 1000000000.0f
-    private val deltaRotationVector = FloatArray(4) { 0f }
-    private var timestamp: Float = 0f
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationrequest: LocationRequest
     private lateinit var sensorManagerGyro : SensorManager
     private lateinit var sensorManagerAccelerometer : SensorManager
+    private lateinit var sensorManagerMagnetometer : SensorManager
     private lateinit var horizonBackground : ImageView
     private lateinit var rollIndicator : ImageView
     private lateinit var xAcclValue : TextView
     private lateinit var yAcclValue : TextView
     private lateinit var zAcclValue : TextView
-
     private lateinit var locViewModel : LocationViewModel
     var gyroVals = mutableListOf<Double>(.0,.0,.0)
     var acclVals = mutableListOf<Double>(.0,.0,.0)
-
+    var magVals = mutableListOf<Double>(.0,.0,.0)
 
     private fun setupSensors() {
         sensorManagerGyro = getSystemService(SENSOR_SERVICE) as SensorManager
+        sensorManagerMagnetometer = getSystemService(SENSOR_SERVICE) as SensorManager
         sensorManagerAccelerometer = getSystemService(SENSOR_SERVICE) as SensorManager
         sensorManagerGyro.getDefaultSensor(Sensor.TYPE_GYROSCOPE)?.also {
             sensorManagerGyro.registerListener(this,
@@ -70,6 +60,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventListene
             SensorManager.SENSOR_DELAY_FASTEST,
             SensorManager.SENSOR_DELAY_FASTEST)
         }
+        sensorManagerMagnetometer.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)?.also {
+            sensorManagerMagnetometer.registerListener(this,it,
+                SensorManager.SENSOR_DELAY_FASTEST,
+                SensorManager.SENSOR_DELAY_FASTEST)
+        }
 
     }
 
@@ -82,55 +77,62 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventListene
                 1 -> roll
                 2 -> yaw
              */
-            var gyroPitch = Math.round(event.values[0]*10.0) / 10.0
-            var gyroRoll = Math.round(event.values[1]*10.0) / 10.0
-            var gyroYaw = Math.round(event.values[2]*10.0) / 10.0
-
-            gyroVals[0]="%.1f".format(gyroPitch).toDouble()
-            gyroVals[1]="%.1f".format(gyroRoll).toDouble()
-            gyroVals[2]="%.1f".format(gyroYaw).toDouble()
-
-//            indicatorPos = (indicatorPos + (gyroRoll)*0.1f)
-//            backgroundPos = (backgroundPos + (gyroPitch)*0.08f)
+            var gyroPitch = round(event.values[0]*10.0) / 10.0
+            var gyroRoll = round(event.values[1]*10.0) / 10.0
+            var gyroYaw = round(event.values[2]*10.0) / 10.0
             gyroVals
-
-
+        }
+        if(event?.sensor?.type == Sensor.TYPE_MAGNETIC_FIELD){
+            var magPitch = (round(event.values[1] * 10.0) / 10.0)
+            var magRoll = (round(event.values[2]*10.0) / 10.0)
+            var magYaw = (round(event.values[0]*10.0) / 10.0)
+            magVals[0]=magYaw
+            magVals[1]=magRoll
+            magVals[2]=magPitch
+            magVals
         }
 
             if(event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
                 /*
                     0->yaw
-                    1->pitch
-                    2->roll
+                    1->roll
+                    2->pitch
 
                  */
 
 
-                var accelPitch = (Math.round(event.values[1] * 10.0) / 10.0)
-                var accelRoll = (Math.round(event.values[0]*10.0) / 10.0)
-                var accelYaw = (Math.round(event.values[2]*10.0) / 10.0)
+                var accelPitch = (round(event.values[2] * 10.0) / 10.0)
+                var accelRoll = (round(event.values[1]*10.0) / 10.0)
+                var accelYaw = (round(event.values[0]*10.0) / 10.0)
                 acclVals[0] = accelPitch
                 acclVals[1] = accelRoll
                 acclVals[2] = accelYaw
+                var angles = AngleTransform(acclVals,gyroVals,magVals)
+                angles
 
-                yAcclValue.text = "${accelPitch}"
-                xAcclValue.text = "${accelYaw}"
-                zAcclValue.text = "${accelRoll}"
-                acclVals
+                rollIndicator.apply {
+                    rotation = angles.roll.toFloat()
+                    translationX = angles.roll.toFloat()
 
 
+                }
+                    horizonBackground.apply {
+                    rotationX = (angles.pitch).toFloat()*0.1f
+                    translationY = -(angles.pitch).toFloat()*2.0f
+
+        }
+                angles
+
+
+                xAcclValue.text = (round(angles.pitch*10.0)/10.0).toString()
+                yAcclValue.text = (round(angles.calculatedRoll*10.0)/10.0).toString()
+                zAcclValue.text = (round(angles.magneticYaw*10.0)/10.0).toString()
     }
-        rollIndicator.apply {
-            rotation = (-acclVals[1] - (-acclVals[1] * sin(gyroVals[1]))).toFloat() *7.5f
-            translationX = acclVals[1].toFloat()
-        }
-        horizonBackground.apply {
-            rotationX = (acclVals[2]).toFloat()
-            translationY = -(acclVals[2]).toFloat()*20f
-        }
+
 
         gyroVals
         acclVals
+
 
     }
 
@@ -144,14 +146,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventListene
     }
 
 
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-
-
         val mapFragment = supportFragmentManager
                 .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
@@ -160,17 +157,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventListene
         xAcclValue = findViewById(R.id.tv_xAcclValue)
         yAcclValue = findViewById(R.id.tv_yAcclValue)
         zAcclValue = findViewById(R.id.tv_zAcclValue)
+
         horizonBackground=findViewById(R.id.img_backg)
         rollIndicator = findViewById(R.id.img_yawIndicator)
-        // Get the SupportMapFragment and request notification when the map is ready to be used.
-
 
 
 
         setupSensors()
 
-//        indicatorPos
-//        backgroundPos
     }
 
 
@@ -266,4 +260,5 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventListene
 
 
     }
+
 }
